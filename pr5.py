@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 
-# Спільний абстрактний базовий клас-контракт
+# Спільний абстрактний базовий клас
 class AquaticEntity(ABC):
     @abstractmethod
     def __str__(self):
         pass
-
+#клас риб
 class Fish(AquaticEntity):
     def __init__(self, name, age, species, size, prefferedfood, isAggressive, neededspace):
         self.name = name                         
@@ -16,43 +16,49 @@ class Fish(AquaticEntity):
         self.isAggressive = isAggressive
         self.neededspace = neededspace           
 
-    
+    #гетер виду риби
     @property
     def species(self):
         return self.__species
-
+    
+    #сеттер виду риби
     @species.setter
     def species(self, new_species):
         if not isinstance(new_species, str) or not new_species.strip():
             raise ValueError("Вид рибки має бути непорожнім рядком!")
         self.__species = new_species.strip()
-
+    #виводимо характеристики рибки
     def __str__(self):
         temper = "Агресивна" if self.isAggressive else "Мирна"
         return (
             f"{self.__species} '{self.name}' "
             f"(вік: {self.age} р., розмір: {self.size} см, {temper}, треба {self.neededspace} м³)"
         )
-
+    
+    #базові технічні характеристики
     def __repr__(self):
         return f"Fish('{self.name}', '{self.__species}', {self.size} см)"
+    
 
     def __del__(self):
         pass
 
 
 class Aquarium(AquaticEntity):
+    #ініціюєм акваріум
     def __init__(self, totalvol, title):
         if not isinstance(totalvol, (int, float)) or totalvol <= 0:
             raise ValueError("Об'єм акваріума має бути більшим за 0!")
-        self.__totalvol = totalvol  
+        self.__totalvol = totalvol  #заприватили об'єм
         self.freespace = totalvol  
         self.fishes = []             
-        self.title = title           
+        self.title = title 
+
+    #геттер об'єму      
     @property
     def totalvol(self):
         return self.__totalvol
-
+    
     def add_fish(self, fish):
 
         if fish.neededspace > self.freespace:
@@ -80,6 +86,7 @@ class Aquarium(AquaticEntity):
         )
         return True
 
+    #top 3 найбільші
     def get_top_3biggest(self):
         """Повертає 3 найбільші риби за розміром."""
         if not self.fishes:
@@ -105,6 +112,7 @@ class Aquarium(AquaticEntity):
 
 
 def main():
+    #self, name, age, species, size, prefferedfood, isAggressive, neededspace))) reference
     nemo = Fish("Немо", 1, "Риба-клоун", 6.5, "Планктон", False, 0.2)
     dory = Fish("Дорі", 2, "Блакитний хірург", 12.0, "Водорості", False, 0.3)
     goldie = Fish("Златка", 1.5, "Золота рибка", 15.5, "Корм", False, 0.3)
@@ -115,7 +123,7 @@ def main():
     oscar = Fish("Тайсон", 3, "Астронотус", 30.0, "Креветки", True, 1.0)
     barracuda = Fish("Стріла", 4, "Баракуда", 85.0, "Риба", True, 1.5)
 
-    print("\n=== ПЕРЕВІРКА ПРИВАТНИХ ПОЛІВ ТА @property ===")
+    print("\n=== перевіряємо приватні поля та сетер/гетер через декоратор ===")
     print("Вид рибки (через @property):", nemo.species)
     nemo.species = "Амфіпріон (Риба-клоун)"
     print("Оновлений вид:", nemo.species)
@@ -123,13 +131,13 @@ def main():
 
     print("\n=== АКВАРІУМ #1 (МИРНИЙ) ===")
     aq1 = Aquarium(1.0, "#1")
-    print("Об'єм акваріума (через @property):", aq1.totalvol, "м³")
+    print("Об'єм акваріума:", aq1.totalvol, "м³")
 
-    aq1.add_fish(nemo)
-    aq1.add_fish(dory)
-    aq1.add_fish(goldie)
-    aq1.add_fish(piranha)   
     aq1.add_fish(angel)
+    aq1.add_fish(dory)
+    aq1.add_fish(nemo)
+    aq1.add_fish(goldie)   
+    aq1.add_fish(piranha)
 
     print("\n" + str(aq1))
     aq1.show_top_3biggest()
@@ -149,4 +157,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-custom decorator, через супери імплементувати add_fish 
+#custom decorator, через супери імплементувати add_fish 
