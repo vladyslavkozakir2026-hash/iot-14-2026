@@ -11,7 +11,7 @@ class AquaticEntity(ABC):
 
 #клас риб
 class Fish(AquaticEntity):
-    def __init__(self, name, age, species, size, preffered_food, is_Aggressive, needed_space):
+    def __init__(self, name, age, species, size, preffered_food, is_Aggressive, needed_space, aquarium):
         if not isinstance(age, (int, float)) or isinstance(age, bool) or age<=0:
             raise ValueError("age риби має бути числом, більший за 0!")
         if not isinstance(size, (int, float)) or isinstance(size, bool) or size<=0:
@@ -73,6 +73,13 @@ class Aquarium(AquaticEntity):
     
     def add_fish(self, fish):
 
+        if fish in self.fishes:
+            print (f"[Відмова -> {self.title}] Рибка '{fish.name}' уже є в цьому акваріумі")
+        
+        if fish.aquarium is not None:
+            print( f"[Відмова -> {self.title}] Рибка '{fish.name}' уже живе в акваріумі "
+                f"'{fish.aquarium.title}'!" )
+        
         if fish.needed_space > self.free_space:
             print(
                 f"[Відмова -> {self.title}] Замало місця для '{fish.name}'! "
@@ -91,6 +98,7 @@ class Aquarium(AquaticEntity):
                 return False
 
         self.fishes.append(fish)
+        fish.aquarium=self
         self.free_space = round(self.free_space - fish.needed_space, 2)
         print(
             f"[Успіх -> {self.title}] Рибку '{fish.name}' додано! "
