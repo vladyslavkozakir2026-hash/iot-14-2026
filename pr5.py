@@ -1,3 +1,5 @@
+from functools import wraps
+
 from abc import ABC, abstractmethod
 
 # Спільний абстрактний базовий клас
@@ -5,16 +7,26 @@ class AquaticEntity(ABC):
     @abstractmethod
     def __str__(self):
         pass
+
+
 #клас риб
 class Fish(AquaticEntity):
-    def __init__(self, name, age, species, size, prefferedfood, isAggressive, neededspace):
+    def __init__(self, name, age, species, size, preffered_food, is_Aggressive, needed_space):
+        if not isinstance(age, (int, float)) or isinstance(age, bool) or age<=0:
+            raise ValueError("age риби має бути числом, більший за 0!")
+        if not isinstance(size, (int, float)) or isinstance(size, bool) or size<=0:
+            raise ValueError("size має бути числом, більший за 0")
+        if not isinstance(needed_space, (int, float)) or isinstance(needed_space, bool) or needed_space<=0:
+            raise ValueError("needed_space має бути числом, більщим за 0")
+        if not isinstance(is_Aggressive, bool):
+            raise ValueError("Поле is_Aggresive має бути типу bool")
         self.name = name                         
         self.age = age                           
-        self.__species = species                
+        self.species = species                
         self.size = size                         
-        self.prefferedfood = prefferedfood       
-        self.isAggressive = isAggressive
-        self.neededspace = neededspace           
+        self.preffered_food = preffered_food       
+        self.is_Aggressive = is_Aggressive
+        self.needed_space = needed_space           
 
     #гетер виду риби
     @property
@@ -24,7 +36,7 @@ class Fish(AquaticEntity):
     #сеттер виду риби
     @species.setter
     def species(self, new_species):
-        if not isinstance(new_species, str) or not new_species.strip():
+        if not isinstance(new_species, str) or not new_species.strip(): #якщо new_species пустий або пустий з пробілами, strip забере їх усі, а також пустий рядок - False. тоді з not- це тру
             raise ValueError("Вид рибки має бути непорожнім рядком!")
         self.__species = new_species.strip()
     #виводимо характеристики рибки
@@ -50,7 +62,7 @@ class Aquarium(AquaticEntity):
         if not isinstance(totalvol, (int, float)) or totalvol <= 0:
             raise ValueError("Об'єм акваріума має бути більшим за 0!")
         self.__totalvol = totalvol  #заприватили об'єм
-        self.freespace = totalvol  
+        self.free_space = totalvol  
         self.fishes = []             
         self.title = title 
 
@@ -61,17 +73,17 @@ class Aquarium(AquaticEntity):
     
     def add_fish(self, fish):
 
-        if fish.neededspace > self.freespace:
+        if fish.needed_space > self.free_space:
             print(
                 f"[Відмова -> {self.title}] Замало місця для '{fish.name}'! "
-                f"Треба {fish.neededspace} м³, вільно тільки {self.freespace} м³."
+                f"Треба {fish.needed_space} м³, вільно тільки {self.free_space} м³."
             )
             return False
 
         if len(self.fishes) > 0:
-            aq_temper = self.fishes[0].isAggressive
-            if aq_temper != fish.isAggressive:
-                curtemp = "агресивну" if fish.isAggressive else "мирну"
+            aq_temper = self.fishes[0].is_Aggressive
+            if aq_temper != fish.is_Aggressive:
+                curtemp = "агресивну" if fish.is_Aggressive else "мирну"
                 print(
                     f"[Відмова -> {self.title}] Не можна підселити {curtemp} рибу "
                     f"'{fish.name}' до риб протилежних за характером!"
@@ -79,12 +91,14 @@ class Aquarium(AquaticEntity):
                 return False
 
         self.fishes.append(fish)
-        self.freespace = round(self.freespace - fish.neededspace, 2)
+        self.free_space = round(self.free_space - fish.needed_space, 2)
         print(
             f"[Успіх -> {self.title}] Рибку '{fish.name}' додано! "
             f"Вільно місця: {self.freespace} м³."
         )
         return True
+
+
 
     #top 3 найбільші
     def get_top_3biggest(self):
@@ -109,6 +123,18 @@ class Aquarium(AquaticEntity):
 
     def __del__(self):
         pass
+
+class QuarantineAquarium(Aquarium):
+        def __init__(self, totalvol, title, max_fishes=2):
+            super().__init__(totalvol, title)
+            self.max_fishes=max_fishes
+
+        def add_fish(self, fish):
+                # додаткова умова
+            if len(self.fishes) >=self.max_fishes:
+                print(f" [Відмова--> {self.title}. В акваріумі може бути не більше {self.max_fishes} риб]")
+                return False
+            return super().add_fish(fish)
 
 
 def main():
@@ -153,8 +179,16 @@ def main():
     print("\n" + str(aq2))
     aq2.show_top_3biggest()
 
+    print("\n=== Акваріум #3 (карантин)===")
+    aq3=QuarantineAquarium(7.0, "Карантин",3)
+    aq3.add_fish(barracuda)
+    aq3.add_fish(nemo)
+    aq3.add_fish(oscar)
+    aq3.add_fish(piranha)
+    aq3.add_fish(goldie)  
 
 if __name__ == "__main__":
     main()
 
-#custom decorator, через супери імплементувати add_fish 
+#custom decorator @check_not_empty!!
+#  
