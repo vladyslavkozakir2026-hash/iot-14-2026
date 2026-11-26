@@ -249,6 +249,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-#custom decorator @check_not_empty!!
-#
