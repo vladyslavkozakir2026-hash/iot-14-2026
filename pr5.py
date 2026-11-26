@@ -1,17 +1,17 @@
 from functools import wraps
-
 from abc import ABC, abstractmethod
+import math
+
 
 def check_not_empty(method_to_dec):
     @wraps(method_to_dec)
     def wrapper(self, *args, **kwargs):
         if not self.fishes:
             print(f"Декоратор в акваріумі {self.title} ще немає рибок для виконання цієї дії!")
-            return []
-        return method_to_dec(self, *args, **kwargs)
+            return None
+        return method_to_dec(self, *args, **kwargs)     
         
     return wrapper
-
 
 
 # Спільний абстрактний базовий клас
@@ -24,14 +24,24 @@ class BaseAquarium(ABC):
 #клас риб
 class Fish:
     def __init__(self, name, age, species, size, preffered_food, is_Aggressive, needed_space):
-        if not isinstance(age, (int, float)) or isinstance(age, bool) or age<=0:
-            raise ValueError("age риби має бути числом, більший за 0!")
-        if not isinstance(size, (int, float)) or isinstance(size, bool) or size<=0:
-            raise ValueError("size має бути числом, більший за 0")
-        if not isinstance(needed_space, (int, float)) or isinstance(needed_space, bool) or needed_space<=0:
-            raise ValueError("needed_space має бути числом, більщим за 0")
+        if not isinstance(age, (int, float)) or isinstance(age, bool):
+            raise TypeError("age риби має бути числом!")
+        if not math.isfinite(age) or age <= 0:
+            raise ValueError("age риби має бути скінченним числом, більшим за 0!")
+
+        if not isinstance(size, (int, float)) or isinstance(size, bool):
+            raise TypeError("size має бути числом!")
+        if not math.isfinite(size) or size <= 0:
+            raise ValueError("size має бути скінченним числом, більшим за 0!")
+
+        if not isinstance(needed_space, (int, float)) or isinstance(needed_space, bool):
+            raise TypeError("needed_space має бути числом!")
+        if not math.isfinite(needed_space) or needed_space <= 0:
+            raise ValueError("needed_space має бути скінченним числом, більшим за 0!")
+
         if not isinstance(is_Aggressive, bool):
-            raise ValueError("Поле is_Aggresive має бути типу bool")
+            raise TypeError("Поле is_Aggressive має бути типу bool!")
+
         self.name = name                         
         self.age = age                           
         self.species = species                
@@ -49,9 +59,12 @@ class Fish:
     #сеттер виду риби
     @species.setter
     def species(self, new_species):
-        if not isinstance(new_species, str) or not new_species.strip(): #якщо new_species пустий або пустий з пробілами, strip забере їх усі, а також пустий рядок - False. тоді з not- це тру
+        if not isinstance(new_species, str):
+            raise TypeError("Вид рибки має бути рядком!")
+        if not new_species.strip(): #якщо new_species пустий або пустий з пробілами, strip забере їх усі, а також пустий рядок - False. тоді з not- це тру
             raise ValueError("Вид рибки має бути непорожнім рядком!")
         self.__species = new_species.strip()
+
     #виводимо характеристики рибки
     def __str__(self):
         temper = "Агресивна" if self.is_Aggressive else "Мирна"
@@ -72,12 +85,10 @@ class Fish:
 class Aquarium(BaseAquarium):
     #ініціюєм акваріум
     def __init__(self, totalvol, title):
-        if(
-            not isinstance(totalvol, (int, float)) 
-            or isinstance(totalvol, bool) 
-            or totalvol <= 0
-        ):
-            raise ValueError("Об'єм акваріума має бути більшим за 0!")
+        if not isinstance(totalvol, (int, float)) or isinstance(totalvol, bool):
+            raise TypeError("Об'єм акваріума має бути числом!")
+        if not math.isfinite(totalvol) or totalvol <= 0:
+            raise ValueError("Об'єм акваріума має бути скінченним числом, більшим за 0!")
         self.__totalvol = totalvol  #заприватили об'єм
         self._fishes = []             
         self.title = title 
@@ -138,12 +149,13 @@ class Aquarium(BaseAquarium):
 
 
     #top 3 найбільші
-    @check_not_empty
+    
     def get_top_3biggest(self):
 
         sorted_fishes = sorted(self.fishes, key=lambda f: f.size, reverse=True)
         return sorted_fishes[:3]
-
+    
+    @check_not_empty
     def show_top_3biggest(self):
         print(f"\n--- Топ-3 найбільших риб в акваріумі {self.title} ---")
         top_fishes = self.get_top_3biggest()
@@ -162,12 +174,10 @@ class Aquarium(BaseAquarium):
 class QuarantineAquarium(Aquarium):
     def __init__(self, totalvol, title, max_fishes=2):
         super().__init__(totalvol, title)
-        if (
-            not isinstance(max_fishes, int)
-            or isinstance(max_fishes, bool)
-            or max_fishes <= 0
-        ):
-            raise ValueError("max_fishes має бути цілим числом більшим за 0!")
+        if not isinstance(max_fishes, int) or isinstance(max_fishes, bool):
+            raise TypeError("max_fishes має бути цілим числом!")
+        if max_fishes <= 0:
+            raise ValueError("max_fishes має бути більшим за 0!")
         self.__max_fishes = max_fishes
     
     #read-only
@@ -241,4 +251,4 @@ if __name__ == "__main__":
     main()
 
 #custom decorator @check_not_empty!!
-#  
+#
