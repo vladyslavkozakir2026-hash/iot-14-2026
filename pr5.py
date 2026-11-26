@@ -6,7 +6,7 @@ def check_not_empty(method_to_dec):
     @wraps(method_to_dec)
     def wrapper(self, *args, **kwargs):
         if not self.fishes:
-            print(f"Декоратор в акваріумі{self.title} ще немає рибок для виконання цієї дії!")
+            print(f"Декоратор в акваріумі {self.title} ще немає рибок для виконання цієї дії!")
             return []
         return method_to_dec(self, *args, **kwargs)
         
@@ -15,14 +15,14 @@ def check_not_empty(method_to_dec):
 
 
 # Спільний абстрактний базовий клас
-class AquaticEntity(ABC):
+class BaseAquarium(ABC):
     @abstractmethod
-    def __str__(self):
+    def add_fish(self, fish):
         pass
 
 
 #клас риб
-class Fish(AquaticEntity):
+class Fish:
     def __init__(self, name, age, species, size, preffered_food, is_Aggressive, needed_space):
         if not isinstance(age, (int, float)) or isinstance(age, bool) or age<=0:
             raise ValueError("age риби має бути числом, більший за 0!")
@@ -69,15 +69,29 @@ class Fish(AquaticEntity):
         pass
 
 
-class Aquarium(AquaticEntity):
+class Aquarium(BaseAquarium):
     #ініціюєм акваріум
     def __init__(self, totalvol, title):
-        if not isinstance(totalvol, (int, float)) or totalvol <= 0:
+        if(
+            not isinstance(totalvol, (int, float)) 
+            or isinstance(totalvol, bool) 
+            or totalvol <= 0
+        ):
             raise ValueError("Об'єм акваріума має бути більшим за 0!")
         self.__totalvol = totalvol  #заприватили об'єм
-        self.free_space = totalvol  
-        self.fishes = []             
+        self._fishes = []             
         self.title = title 
+
+    #getter fishes list
+    @property
+    def fishes(self):
+        return tuple(self._fishes)
+
+    
+    @property
+    def free_space(self):
+        used=sum(f.needed_space for f in self._fishes)
+        return round(self.totalvol - used, 2)
 
     #геттер об'єму      
     @property
@@ -86,7 +100,7 @@ class Aquarium(AquaticEntity):
     
     def add_fish(self, fish):
 
-        if fish in self.fishes:
+        if fish in self._fishes:
             print (f"[Відмова -> {self.title}] Рибка '{fish.name}' уже є в цьому акваріумі")
             return False
         
@@ -102,7 +116,7 @@ class Aquarium(AquaticEntity):
             )
             return False
 
-        if len(self.fishes) > 0:
+        if len(self._fishes) > 0:
             aq_temper = self.fishes[0].is_Aggressive
             if aq_temper != fish.is_Aggressive:
                 curtemp = "агресивну" if fish.is_Aggressive else "мирну"
@@ -112,9 +126,8 @@ class Aquarium(AquaticEntity):
                 )
                 return False
 
-        self.fishes.append(fish)
+        self._fishes.append(fish)
         fish.aquarium=self
-        self.free_space = round(self.free_space - fish.needed_space, 2)
 
         print(
             f"[Успіх -> {self.title}] Рибку '{fish.name}' додано! "
@@ -147,16 +160,29 @@ class Aquarium(AquaticEntity):
         pass
 
 class QuarantineAquarium(Aquarium):
-        def __init__(self, totalvol, title, max_fishes=2):
-            super().__init__(totalvol, title)
-            self.max_fishes=max_fishes
-
-        def add_fish(self, fish):
-                # додаткова умова
-            if len(self.fishes) >=self.max_fishes:
-                print(f" [Відмова--> {self.title}. В акваріумі може бути не більше {self.max_fishes} риб]")
-                return False
-            return super().add_fish(fish)
+    def __init__(self, totalvol, title, max_fishes=2):
+        super().__init__(totalvol, title)
+        if (
+            not isinstance(max_fishes, int)
+            or isinstance(max_fishes, bool)
+            or max_fishes <= 0
+        ):
+            raise ValueError("max_fishes має бути цілим числом більшим за 0!")
+        self.__max_fishes = max_fishes
+    
+    #read-only
+    @property
+    def max_fishes(self):
+        return self.__max_fishes
+    
+    def add_fish(self, fish):
+        if len(self.fishes) >= self.max_fishes:
+            print(
+                f"[Відмова--> {self.title}. "
+                f"В акваріумі може бути не більше {self.max_fishes} риб]"
+            )
+            return False
+        return super().add_fish(fish)
  
 
 def main():
@@ -171,6 +197,7 @@ def main():
     oscar = Fish("Тайсон", 3, "Астронотус", 30.0, "Креветки", True, 1.0)
     barracuda = Fish("Стріла", 4, "Баракуда", 85.0, "Риба", True, 1.5)
 
+    print("\n=== ПЕРЕВІРКА ПРИВАТНИХ ПОЛІВ ТА @property ===")
     print("\n=== перевіряємо приватні поля та сетер/гетер через декоратор ===")
     print("Вид рибки (через @property):", nemo.species)
     nemo.species = "Амфіпріон (Риба-клоун)"
@@ -179,17 +206,17 @@ def main():
 
     print("\n=== АКВАРІУМ #1 (МИРНИЙ) ===")
     aq1 = Aquarium(1.0, "#1")
+    print("Об'єм акваріума (через @property):", aq1.totalvol, "м³")
     print("Об'єм акваріума:", aq1.totalvol, "м³")
 
-    aq1.add_fish(angel)
-    aq1.add_fish(dory)
     aq1.add_fish(nemo)
-    aq1.add_fish(goldie)   
-    aq1.add_fish(piranha)
-
+    aq1.add_fish(dory)
+    aq1.add_fish(goldie)
+    aq1.add_fish(piranha)   
+    
     print("\n" + str(aq1))
     aq1.show_top_3biggest()
-
+    
     print("\n=== АКВАРІУМ #2 (ХИЖИЙ) ===")
     aq2 = Aquarium(6.0, "#2")
     aq2.add_fish(shark)
@@ -201,19 +228,14 @@ def main():
     print("\n" + str(aq2))
     aq2.show_top_3biggest()
 
-    print("\n=== Акваріум #3 (карантин)===")
-    aq3=QuarantineAquarium(7.0, "Карантин",3)
-    aq3.add_fish(barracuda)
-    aq3.add_fish(nemo)
-    aq3.add_fish(oscar)
-    aq3.add_fish(piranha)
-    aq3.add_fish(goldie)
-# 1. Створюємо порожній акваріум:
-    aq = Aquarium(title="Морський риф", totalvol=100)
+    aq = Aquarium(100.0, "Морський риф")
 
     print("=== ТЕСТ 1: Виклик на порожньому акваріумі ===")
     result = aq.get_top_3biggest()
     print("Результат:", result)
+    
+    print("\n=== АКВАРІУМ #3 (карантин) характер риб не залежить ===")
+    aq3= QuarantineAquarium(10, "Дурка", 5)
 
 if __name__ == "__main__":
     main()
