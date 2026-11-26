@@ -2,6 +2,18 @@ from functools import wraps
 
 from abc import ABC, abstractmethod
 
+def check_not_empty(method_to_dec):
+    @wraps(method_to_dec)
+    def wrapper(self, *args, **kwargs):
+        if not self.fishes:
+            print(f"Декоратор в акваріумі{self.title} ще немає рибок для виконання цієї дії!")
+            return []
+        return method_to_dec(self, *args, **kwargs)
+        
+    return wrapper
+
+
+
 # Спільний абстрактний базовий клас
 class AquaticEntity(ABC):
     @abstractmethod
@@ -11,7 +23,7 @@ class AquaticEntity(ABC):
 
 #клас риб
 class Fish(AquaticEntity):
-    def __init__(self, name, age, species, size, preffered_food, is_Aggressive, needed_space, aquarium):
+    def __init__(self, name, age, species, size, preffered_food, is_Aggressive, needed_space):
         if not isinstance(age, (int, float)) or isinstance(age, bool) or age<=0:
             raise ValueError("age риби має бути числом, більший за 0!")
         if not isinstance(size, (int, float)) or isinstance(size, bool) or size<=0:
@@ -26,7 +38,8 @@ class Fish(AquaticEntity):
         self.size = size                         
         self.preffered_food = preffered_food       
         self.is_Aggressive = is_Aggressive
-        self.needed_space = needed_space           
+        self.needed_space = needed_space
+        self.aquarium=None        
 
     #гетер виду риби
     @property
@@ -41,10 +54,10 @@ class Fish(AquaticEntity):
         self.__species = new_species.strip()
     #виводимо характеристики рибки
     def __str__(self):
-        temper = "Агресивна" if self.isAggressive else "Мирна"
+        temper = "Агресивна" if self.is_Aggressive else "Мирна"
         return (
             f"{self.__species} '{self.name}' "
-            f"(вік: {self.age} р., розмір: {self.size} см, {temper}, треба {self.neededspace} м³)"
+            f"(вік: {self.age} р., розмір: {self.size} см, {temper}, треба {self.needed_space} м³)"
         )
     
     #базові технічні характеристики
@@ -75,10 +88,12 @@ class Aquarium(AquaticEntity):
 
         if fish in self.fishes:
             print (f"[Відмова -> {self.title}] Рибка '{fish.name}' уже є в цьому акваріумі")
+            return False
         
         if fish.aquarium is not None:
             print( f"[Відмова -> {self.title}] Рибка '{fish.name}' уже живе в акваріумі "
                 f"'{fish.aquarium.title}'!" )
+            return False
         
         if fish.needed_space > self.free_space:
             print(
@@ -100,20 +115,19 @@ class Aquarium(AquaticEntity):
         self.fishes.append(fish)
         fish.aquarium=self
         self.free_space = round(self.free_space - fish.needed_space, 2)
+
         print(
             f"[Успіх -> {self.title}] Рибку '{fish.name}' додано! "
-            f"Вільно місця: {self.freespace} м³."
+            f"Вільно місця: {self.free_space} м³."
         )
         return True
 
 
 
     #top 3 найбільші
+    @check_not_empty
     def get_top_3biggest(self):
-        """Повертає 3 найбільші риби за розміром."""
-        if not self.fishes:
-            print(f"В акваріумі {self.title} ще немає рибок!")
-            return []
+
         sorted_fishes = sorted(self.fishes, key=lambda f: f.size, reverse=True)
         return sorted_fishes[:3]
 
@@ -126,7 +140,7 @@ class Aquarium(AquaticEntity):
     def __str__(self):
         return (
             f"Акваріум {self.title}: загальний об'єм {self.__totalvol} м³, "
-            f"вільно {self.freespace} м³, рибок: {len(self.fishes)}"
+            f"вільно {self.free_space} м³, рибок: {len(self.fishes)}"
         )
 
     def __del__(self):
@@ -143,7 +157,7 @@ class QuarantineAquarium(Aquarium):
                 print(f" [Відмова--> {self.title}. В акваріумі може бути не більше {self.max_fishes} риб]")
                 return False
             return super().add_fish(fish)
-
+ 
 
 def main():
     #self, name, age, species, size, prefferedfood, isAggressive, neededspace))) reference
@@ -193,7 +207,13 @@ def main():
     aq3.add_fish(nemo)
     aq3.add_fish(oscar)
     aq3.add_fish(piranha)
-    aq3.add_fish(goldie)  
+    aq3.add_fish(goldie)
+# 1. Створюємо порожній акваріум:
+    aq = Aquarium(title="Морський риф", totalvol=100)
+
+    print("=== ТЕСТ 1: Виклик на порожньому акваріумі ===")
+    result = aq.get_top_3biggest()
+    print("Результат:", result)
 
 if __name__ == "__main__":
     main()
